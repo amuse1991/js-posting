@@ -1,7 +1,62 @@
 import React from "react";
-import { screen, render } from "@testing-library/react";
+import { screen, render, fireEvent } from "@testing-library/react";
 import App from "./App";
 
 describe("<App/>", () => {
-  it("render components correctly", () => {});
+  it("render components correctly", () => {
+    const { container } = render(<App />);
+
+    const toDoList = screen.getByTestId("toDoList");
+    expect(toDoList).toBeInTheDocument();
+    expect(toDoList.firstChild).toBeNull(); // 할일 목록이 비어있음을 확인
+
+    const input = screen.getByPlaceholderText("할 일을 입력해 주세요");
+    expect(input).toBeInTheDocument();
+    const label = screen.getByText("추가");
+    expect(label).toBeInTheDocument();
+
+    expect(container).toMatchSnapshot();
+  });
+
+  it("adds and deletes ToDo items", () => {
+    render(<App />);
+
+    const input = screen.getByPlaceholderText("할 일을 입력해 주세요");
+    const button = screen.getByText("추가");
+    fireEvent.change(input, { target: { value: "study react 1" } });
+    fireEvent.click(button);
+
+    const todoItem = screen.getByText("study react 1");
+    expect(todoItem).toBeInTheDocument();
+    const deleteButton = screen.getByText("삭제");
+    expect(deleteButton).toBeInTheDocument();
+
+    const todoList = screen.getByTestId("toDoList");
+    expect(todoList.childElementCount).toBe(1);
+
+    fireEvent.change(input, { target: { value: "study react 2" } });
+    fireEvent.click(button);
+
+    const todoItem2 = screen.getByText("study react 2");
+    expect(todoItem2).toBeInTheDocument();
+    expect(todoList.childElementCount).toBe(2);
+
+    const deleteButtons = screen.getAllByText("삭제");
+    fireEvent.click(deleteButtons[0]);
+
+    expect(todoItem).not.toBeInTheDocument();
+    expect(todoList.childElementCount).toBe(1);
+  });
+
+  it("does not add empty ToDo", () => {
+    render(<App />);
+
+    const todoList = screen.getByTestId("toDoList");
+    const length = todoList.childElementCount;
+
+    const button = screen.getByText("추가");
+    fireEvent.click(button);
+
+    expect(todoList.childElementCount).toBe(length);
+  });
 });
